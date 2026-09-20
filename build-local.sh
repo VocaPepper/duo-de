@@ -41,10 +41,15 @@ applyPatches() {
 
 buildTrebleApp() {
     echo "--> Building treble_app (best effort)"
-    if [ -d treble_app ]; then
-        ( cd treble_app && bash build.sh release ) \
-            && cp treble_app/TrebleApp.apk vendor/hardware_overlay/TrebleApp/app.apk \
-            || echo "!!! treble_app build failed; leaving prebuilt app.apk as-is"
+    local out="vendor/hardware_overlay/TrebleApp/app.apk"
+    mkdir -p "$(dirname "$out")"
+    if [ -d treble_app ] && ( cd treble_app && bash build.sh release ); then
+        cp treble_app/TrebleApp.apk "$out"
+    elif [ ! -f "$out" ] && [ -f "${TREBLE_APP_FALLBACK:-/aosp/TrebleApp.apk}" ]; then
+        echo "!!! treble_app build failed; using fallback ${TREBLE_APP_FALLBACK:-/aosp/TrebleApp.apk}"
+        cp "${TREBLE_APP_FALLBACK:-/aosp/TrebleApp.apk}" "$out"
+    else
+        echo "!!! treble_app build failed; leaving existing $out"
     fi
     echo
 }
