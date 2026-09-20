@@ -1,0 +1,61 @@
+From 0fecfa8efc9e547f464223360802915879764e3c Mon Sep 17 00:00:00 2001
+From: duo-de debug <debug@localhost>
+Date: Sun, 20 Sep 2026 13:24:15 -0500
+Subject: [PATCH] BpfNetMaps: guard local_net maps against null on BPF-less
+ devices
+
+sLocalNetAccessMap / sLocalNetBlockedUidMap are only created when the
+25Q2 BPF maps can be loaded. On BPF-less kernels (e.g. Surface Duo 1,
+kernel 4.14), initBpfMaps() throws and the TrebleDroid wrapper in
+ensureInitialized() swallows it, leaving those statics null.
+
+PermissionMonitor calls removeUidFromLocalNetBlockMap() from its
+PACKAGE_REMOVED broadcast receiver, so uninstalling or updating any app
+threw an NPE in system_server, which restarted the system (soft reboot).
+
+Add the same null guards that patch 0009 added for add/remove
+LocalNetAccess, covering getLocalNetAccess, addUidToLocalNetBlockMap,
+isUidBlockedFromUsingLocalNetwork and removeUidFromLocalNetBlockMap.
+---
+ service/src/com/android/server/BpfNetMaps.java | 4 ++++
+ 1 file changed, 4 insertions(+)
+
+diff --git a/service/src/com/android/server/BpfNetMaps.java b/service/src/com/android/server/BpfNetMaps.java
+index d8a8c05d7b..135ca78286 100644
+--- a/service/src/com/android/server/BpfNetMaps.java
++++ b/service/src/com/android/server/BpfNetMaps.java
+@@ -1009,6 +1009,7 @@ public class BpfNetMaps {
+     public boolean getLocalNetAccess(final int lpmBitlen, @Nullable final String iface,
+             final InetAddress address, final int protocol, final int remotePort) {
+         throwIfPre25Q2("getLocalNetAccess is not available on pre-B devices");
++        if (sLocalNetAccessMap == null) return true;
+         final int ifIndex;
+         if (iface == null) {
+             ifIndex = 0;
+@@ -1039,6 +1040,7 @@ public class BpfNetMaps {
+     @RequiresApi(Build.VERSION_CODES.CUR_DEVELOPMENT)
+     public void addUidToLocalNetBlockMap(final int uid) {
+         throwIfPre25Q2("addUidToLocalNetBlockMap is not available on pre-B devices");
++        if (sLocalNetBlockedUidMap == null) return;
+         try {
+             sLocalNetBlockedUidMap.updateEntry(new U32(uid), new Bool(true));
+         } catch (ErrnoException e) {
+@@ -1053,6 +1055,7 @@ public class BpfNetMaps {
+     @RequiresApi(Build.VERSION_CODES.CUR_DEVELOPMENT)
+     public boolean isUidBlockedFromUsingLocalNetwork(final int uid) {
+         throwIfPre25Q2("isUidBlockedFromUsingLocalNetwork is not available on pre-B devices");
++        if (sLocalNetBlockedUidMap == null) return false;
+         try {
+             final Bool value = sLocalNetBlockedUidMap.getValue(new U32(uid));
+             return value == null ? false : value.val;
+@@ -1070,6 +1073,7 @@ public class BpfNetMaps {
+     @RequiresApi(Build.VERSION_CODES.CUR_DEVELOPMENT)
+     public void removeUidFromLocalNetBlockMap(final int uid) {
+         throwIfPre25Q2("removeUidFromLocalNetBlockMap is not available on pre-B devices");
++        if (sLocalNetBlockedUidMap == null) return;
+         try {
+             sLocalNetBlockedUidMap.deleteEntry(new U32(uid));
+         } catch (ErrnoException e) {
+-- 
+2.43.0
+
