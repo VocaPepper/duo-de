@@ -58,7 +58,7 @@ buildVariant() {
     mkdir -p "$BUILD_DIR"
     echo "--> Building $VARIANT"
     source build/envsetup.sh
-    lunch "$VARIANT"-userdebug
+    lunch "$VARIANT"-"${LUNCH_RELEASE:-bp2a}"-userdebug
     make -j"$JOBS" systemimage
     cp "$OUT/system.img" "$BUILD_DIR/system-$VARIANT.img"
     echo "--> image: $BUILD_DIR/system-$VARIANT.img"
