@@ -1,0 +1,33 @@
+From 2c6ef8b74785cf37e2f8320e9e0c69565872de13 Mon Sep 17 00:00:00 2001
+From: duo-de debug <debug@localhost>
+Date: Sun, 20 Sep 2026 14:30:44 -0500
+Subject: [PATCH] Drop ParanoidSense from the product
+
+The ponces/android_packages_apps_ParanoidSense repository no longer exists,
+so ParasoidSense cannot be fetched in a public build. Remove the product
+package and the sense_service property.
+---
+ config/common.mk | 7 ++-----
+ 1 file changed, 2 insertions(+), 5 deletions(-)
+
+diff --git a/config/common.mk b/config/common.mk
+index 86b53a7..d5271d3 100644
+--- a/config/common.mk
++++ b/config/common.mk
+@@ -13,11 +13,8 @@ PRODUCT_COPY_FILES += \
+     frameworks/native/data/etc/android.software.sip.voip.xml:$(TARGET_COPY_OUT_PRODUCT)/etc/permissions/android.software.sip.voip.xml
+ 
+ # Face Unlock
+-PRODUCT_PACKAGES += \
+-    ParanoidSense
+-
+-PRODUCT_SYSTEM_EXT_PROPERTIES += \
+-    ro.face.sense_service=true
++# ParanoidSense is omitted: its upstream repository was deleted and there is no
++# public mirror, so the module cannot be fetched/built. See build/default.xml.
+ 
+ PRODUCT_COPY_FILES += \
+     frameworks/native/data/etc/android.hardware.biometrics.face.xml:$(TARGET_COPY_OUT_SYSTEM)/etc/permissions/android.hardware.biometrics.face.xml
+-- 
+2.43.0
+
