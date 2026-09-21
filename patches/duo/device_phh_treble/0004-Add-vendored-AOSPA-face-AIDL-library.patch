@@ -1,0 +1,122 @@
+From 0a5752f1904f54a05a30fd5b9d07bf4efd103fd3 Mon Sep 17 00:00:00 2001
+From: duo-de build <build@localhost>
+Date: Sun, 20 Sep 2026 14:42:35 -0500
+Subject: [PATCH] Add vendored AOSPA face AIDL library
+
+The personal FaceSense patch in frameworks/base depends on the
+vendor.aospa.biometrics.face module, which came from the now-deleted
+ponces/android_packages_apps_ParanoidSense repository. Vendor the small
+self-contained AIDL library (from AOSPA/android_vendor_aospa) so the
+public build resolves.
+---
+ aospa-face-aidl/Android.bp                    | 22 +++++++++++
+ .../aospa/biometrics/face/ISenseService.aidl  | 37 +++++++++++++++++++
+ .../face/ISenseServiceReceiver.aidl           | 23 ++++++++++++
+ 3 files changed, 82 insertions(+)
+ create mode 100644 aospa-face-aidl/Android.bp
+ create mode 100644 aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseService.aidl
+ create mode 100644 aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseServiceReceiver.aidl
+
+diff --git a/aospa-face-aidl/Android.bp b/aospa-face-aidl/Android.bp
+new file mode 100644
+index 0000000..92ca32c
+--- /dev/null
++++ b/aospa-face-aidl/Android.bp
+@@ -0,0 +1,22 @@
++//
++// SPDX-FileCopyrightText: Paranoid Android
++// SPDX-License-Identifier: Apache-2.0
++//
++// Vendored from AOSPA/android_vendor_aospa
++// (interfaces/biometrics/face/aidl). The original repository that provided
++// this AIDL library (ponces/android_packages_apps_ParanoidSense) no longer
++// exists, but the personal FaceSense patch applied to frameworks/base depends
++// on this module, so it is vendored here to keep the public build working.
++//
++
++java_library {
++    name: "vendor.aospa.biometrics.face",
++    installable: true,
++    srcs: [
++        "src/**/*.java",
++        "src/**/*.aidl",
++    ],
++    aidl: {
++        local_include_dirs: ["src"],
++    },
++}
+diff --git a/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseService.aidl b/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseService.aidl
+new file mode 100644
+index 0000000..a48295f
+--- /dev/null
++++ b/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseService.aidl
+@@ -0,0 +1,37 @@
++/*
++ * SPDX-FileCopyrightText: Paranoid Android
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package vendor.aospa.biometrics.face;
++
++import vendor.aospa.biometrics.face.ISenseServiceReceiver;
++
++/** @hide */
++interface ISenseService {
++    oneway void authenticate(long operationId);
++
++    oneway void cancel();
++
++    oneway void enroll(in byte[] cryptoToken, int timeout, in int[] disabledFeatures);
++
++    int enumerate();
++
++    long generateChallenge(int timeout);
++
++    int getAuthenticatorId();
++
++    oneway void remove(int biometricId);
++
++    oneway void resetLockout(in byte[] cryptoToken);
++
++    int revokeChallenge();
++
++    oneway void setCallback(in ISenseServiceReceiver receiver);
++
++    int getFeatureCount();
++
++    boolean getFeature(int feature, int faceId);
++
++    oneway void setFeature(int feature, boolean enable, in byte[] token, int faceId);
++}
+diff --git a/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseServiceReceiver.aidl b/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseServiceReceiver.aidl
+new file mode 100644
+index 0000000..08de12a
+--- /dev/null
++++ b/aospa-face-aidl/src/vendor/aospa/biometrics/face/ISenseServiceReceiver.aidl
+@@ -0,0 +1,23 @@
++/*
++ * SPDX-FileCopyrightText: Paranoid Android
++ * SPDX-License-Identifier: Apache-2.0
++ */
++
++package vendor.aospa.biometrics.face;
++
++/** @hide */
++oneway interface ISenseServiceReceiver {
++    void onEnrollResult(int faceId, int userId, int remaining);
++
++    void onAuthenticated(int faceId, int userId, in byte[] token);
++
++    void onAcquired(int userId, int acquiredInfo, int vendorCode);
++
++    void onError(int error, int vendorCode);
++
++    void onRemoved(in int[] faceIds, int userId);
++
++    void onEnumerate(in int[] faceIds, int userId);
++
++    void onLockoutChanged(long duration);
++}
+-- 
+2.43.0
+

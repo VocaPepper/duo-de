@@ -1,0 +1,34 @@
+From ef1fd48afe5262cca57df2af7fbca61ff394e3be Mon Sep 17 00:00:00 2001
+From: duo-de debug <debug@localhost>
+Date: Mon, 21 Sep 2026 00:39:47 -0500
+Subject: [PATCH] Disable the OmniJaws app for public builds
+
+The manifest pins crDroid's android_packages_services_OmniJaws at branch 15.0,
+whose DetailedWeatherView/WeatherActivity call the old OmniJawsClient API,
+while the personal patch adds the 16.0 API (Context-taking methods) to
+frameworks/base. The app therefore does not compile. Drop it from
+PRODUCT_PACKAGES; the framework/SystemUI/Settings weather integrations still
+build, only the weather provider app is missing.
+---
+ config/packages.mk | 8 ++++++--
+ 1 file changed, 6 insertions(+), 2 deletions(-)
+
+diff --git a/config/packages.mk b/config/packages.mk
+index 88154e8..54b2841 100644
+--- a/config/packages.mk
++++ b/config/packages.mk
+@@ -10,5 +10,9 @@ PRODUCT_PACKAGES += \
+     QuickAccessWallet
+ 
+ # Weather
+-PRODUCT_PACKAGES += \
+-    OmniJaws
++# OmniJaws app disabled for public builds: the manifest pins crDroid's 15.0
++# branch, whose app API no longer matches the 16.0 OmniJawsClient that the
++# personal patch adds to frameworks/base, so it does not compile. The framework
++# and Settings integrations still build; only the weather provider app is absent.
++# PRODUCT_PACKAGES += \
++#     OmniJaws
+-- 
+2.43.0
+
